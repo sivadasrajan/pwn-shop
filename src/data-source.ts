@@ -4,12 +4,13 @@ import { User } from "./entity/User"
 
 export const AppDataSource = new DataSource({
     type: "postgres",
-    host: "localhost",
+    host: process.env.PWNSHOP_HOST,
     port: 5432,
-    username: "test",
-    password: "test",
-    database: "test",
+    username: process.env.PWNSHOP_USER,
+    password: process.env.PWNSHOP_PASSWORD,
+    database: process.env.PWNSHOP_DATABASE,
     synchronize: true,
+    ssl:true,
     logging: false,
     entities: [User],
     migrations: [],

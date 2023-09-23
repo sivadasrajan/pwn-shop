@@ -35,32 +35,39 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var express_1 = __importDefault(require("express"));
-var body_parser_1 = __importDefault(require("body-parser"));
-var data_source_1 = require("./data-source");
-var routes_1 = __importDefault(require("./routes"));
-var helmet_1 = __importDefault(require("helmet"));
-var cors_1 = __importDefault(require("cors"));
-var port = process.env.PORT || 8080;
-data_source_1.AppDataSource.initialize().then(function () { return __awaiter(void 0, void 0, void 0, function () {
-    var app;
-    return __generator(this, function (_a) {
-        app = (0, express_1.default)();
-        app.use((0, cors_1.default)());
-        app.use((0, helmet_1.default)());
-        app.use(body_parser_1.default.json());
-        // register express routes from defined application routes
-        app.use("/", routes_1.default);
-        // setup express app here
-        // ...
-        // start express server
-        app.listen(port);
-        console.log("Express server has started on port 8080. Open http://localhost:8080 to see results");
-        return [2 /*return*/];
-    });
-}); }).catch(function (error) { return console.log(error); });
-//# sourceMappingURL=index.js.map
+exports.checkRole = void 0;
+var typeorm_1 = require("typeorm");
+var User_1 = require("../entity/User");
+var checkRole = function (roles) {
+    return function (req, res, next) { return __awaiter(void 0, void 0, void 0, function () {
+        var id, userRepository, user, id_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    id = res.locals.jwtPayload.userId;
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, userRepository.findOneOrFail(id)];
+                case 2:
+                    user = _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    id_1 = _a.sent();
+                    res.status(401).send();
+                    return [3 /*break*/, 4];
+                case 4:
+                    //Check if array of authorized roles includes the user's role
+                    if (roles.indexOf(user.role) > -1)
+                        next();
+                    else
+                        res.status(401).send();
+                    return [2 /*return*/];
+            }
+        });
+    }); };
+};
+exports.checkRole = checkRole;
+//# sourceMappingURL=checkRole.js.map

@@ -36,76 +36,169 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserController = void 0;
-var data_source_1 = require("../data-source");
+var typeorm_1 = require("typeorm");
+var class_validator_1 = require("class-validator");
 var User_1 = require("../entity/User");
 var UserController = /** @class */ (function () {
     function UserController() {
-        this.userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
     }
-    UserController.prototype.all = function (request, response, next) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/, this.userRepository.find()];
-            });
+    var _a;
+    _a = UserController;
+    UserController.listAll = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        var userRepository, users;
+        return __generator(_a, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    return [4 /*yield*/, userRepository.find({
+                            select: ["id", "username", "role"] //We dont want to send the passwords on response
+                        })];
+                case 1:
+                    users = _b.sent();
+                    //Send the users object
+                    res.send(users);
+                    return [2 /*return*/];
+            }
         });
-    };
-    UserController.prototype.one = function (request, response, next) {
-        return __awaiter(this, void 0, void 0, function () {
-            var id, user;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        id = parseInt(request.params.id);
-                        return [4 /*yield*/, this.userRepository.findOne({
-                                where: { id: id }
-                            })];
-                    case 1:
-                        user = _a.sent();
-                        if (!user) {
-                            return [2 /*return*/, "unregistered user"];
-                        }
-                        return [2 /*return*/, user];
-                }
-            });
+    }); };
+    UserController.getOneById = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        var id, userRepository, user, error_1;
+        return __generator(_a, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    id = parseInt(req.params.id);
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, userRepository.findOneOrFail({ where: { id: id } })];
+                case 2:
+                    user = _b.sent();
+                    res.send(user);
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_1 = _b.sent();
+                    res.status(404).send("User not found");
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
         });
-    };
-    UserController.prototype.save = function (request, response, next) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, firstName, lastName, age, user;
-            return __generator(this, function (_b) {
-                _a = request.body, firstName = _a.firstName, lastName = _a.lastName, age = _a.age;
-                user = Object.assign(new User_1.User(), {
-                    firstName: firstName,
-                    lastName: lastName,
-                    age: age
-                });
-                return [2 /*return*/, this.userRepository.save(user)];
-            });
+    }); };
+    UserController.newUser = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        var _b, username, password, role, user, errors, userRepository, e_1;
+        return __generator(_a, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    _b = req.body, username = _b.username, password = _b.password, role = _b.role;
+                    user = new User_1.User();
+                    user.username = username;
+                    user.password = password;
+                    user.role = role;
+                    return [4 /*yield*/, (0, class_validator_1.validate)(user)];
+                case 1:
+                    errors = _c.sent();
+                    if (errors.length > 0) {
+                        res.status(400).send(errors);
+                        return [2 /*return*/];
+                    }
+                    //Hash the password, to securely store on DB
+                    user.hashPassword();
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    _c.label = 2;
+                case 2:
+                    _c.trys.push([2, 4, , 5]);
+                    return [4 /*yield*/, userRepository.save(user)];
+                case 3:
+                    _c.sent();
+                    return [3 /*break*/, 5];
+                case 4:
+                    e_1 = _c.sent();
+                    res.status(409).send("username already in use");
+                    return [2 /*return*/];
+                case 5:
+                    //If all ok, send 201 response
+                    res.status(201).send("User created");
+                    return [2 /*return*/];
+            }
         });
-    };
-    UserController.prototype.remove = function (request, response, next) {
-        return __awaiter(this, void 0, void 0, function () {
-            var id, userToRemove;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        id = parseInt(request.params.id);
-                        return [4 /*yield*/, this.userRepository.findOneBy({ id: id })];
-                    case 1:
-                        userToRemove = _a.sent();
-                        if (!userToRemove) {
-                            return [2 /*return*/, "this user not exist"];
-                        }
-                        return [4 /*yield*/, this.userRepository.remove(userToRemove)];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/, "user has been removed"];
-                }
-            });
+    }); };
+    UserController.editUser = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        var id, _b, username, role, userRepository, user, error_2, errors, e_2;
+        return __generator(_a, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    id = parseInt(req.params.id);
+                    _b = req.body, username = _b.username, role = _b.role;
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    _c.label = 1;
+                case 1:
+                    _c.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, userRepository.findOneOrFail({ where: { id: id } })];
+                case 2:
+                    user = _c.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_2 = _c.sent();
+                    //If not found, send a 404 response
+                    res.status(404).send("User not found");
+                    return [2 /*return*/];
+                case 4:
+                    //Validate the new values on model
+                    user.username = username;
+                    user.role = role;
+                    return [4 /*yield*/, (0, class_validator_1.validate)(user)];
+                case 5:
+                    errors = _c.sent();
+                    if (errors.length > 0) {
+                        res.status(400).send(errors);
+                        return [2 /*return*/];
+                    }
+                    _c.label = 6;
+                case 6:
+                    _c.trys.push([6, 8, , 9]);
+                    return [4 /*yield*/, userRepository.save(user)];
+                case 7:
+                    _c.sent();
+                    return [3 /*break*/, 9];
+                case 8:
+                    e_2 = _c.sent();
+                    res.status(409).send("username already in use");
+                    return [2 /*return*/];
+                case 9:
+                    //After all send a 204 (no content, but accepted) response
+                    res.status(204).send();
+                    return [2 /*return*/];
+            }
         });
-    };
+    }); };
+    UserController.deleteUser = function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+        var id, userRepository, user, error_3;
+        return __generator(_a, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    id = parseInt(req.params.id);
+                    userRepository = (0, typeorm_1.getRepository)(User_1.User);
+                    _b.label = 1;
+                case 1:
+                    _b.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, userRepository.findOneOrFail({ where: { id: id } })];
+                case 2:
+                    user = _b.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_3 = _b.sent();
+                    res.status(404).send("User not found");
+                    return [2 /*return*/];
+                case 4:
+                    userRepository.delete(id);
+                    //After all send a 204 (no content, but accepted) response
+                    res.status(204).send();
+                    return [2 /*return*/];
+            }
+        });
+    }); };
     return UserController;
 }());
-exports.UserController = UserController;
+;
+exports.default = UserController;
 //# sourceMappingURL=UserController.js.map
